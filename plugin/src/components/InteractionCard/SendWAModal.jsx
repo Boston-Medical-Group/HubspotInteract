@@ -18,7 +18,9 @@ const SendWAModal = ({ selectedContact, handleClose, manager }) => {
   const { sendOutboundMessage, getTemplate } = useApi({ token: manager.store.getState().flex.session.ssoTokenPayload.token });
   const [templateList, setTemplateList] = useState([]);
   const [message, setMessage] = useState();
-  const [isLoadingTemplate, setIsLoadingTemplate] = useState(true);
+  const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
+  const [isUsingTemplate, setIsUsingTemplate] = useState(false);
+  const [loadTemplates, setLoadTemplates] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [messageSent, setMessageSent] = useState(false);
   const [error, setError] = useState();
@@ -26,15 +28,22 @@ const SendWAModal = ({ selectedContact, handleClose, manager }) => {
 
   useEffect(() => {
     if (selectedContact) {
-      setIsLoadingTemplate(true);
-      setTemplateList(undefined);
-      setTemplateError(undefined);
-      getTemplate({ hubspot_id: selectedContact.hs_object_id })
-        .then((data) => { setTemplateList(data) })
-        .catch(() => setTemplateError("Error while loading tempaltes"))
-        .finally(() => setIsLoadingTemplate(false));
+      
     }
   }, [selectedContact]);
+
+  const onSelectTemplateHandler = (event) => {
+    event.preventDefault();
+  
+    setLoadTemplates(true);
+    setIsLoadingTemplate(true);
+    setTemplateList(undefined);
+    setTemplateError(undefined);
+    getTemplate({ hubspot_id: selectedContact.hs_object_id })
+      .then((data) => { setTemplateList(data) })
+      .catch(() => setTemplateError("Error while loading tempaltes"))
+      .finally(() => setIsLoadingTemplate(false));
+  }
 
   const closeModal = useCallback(() => {
     setMessage(undefined);
@@ -43,6 +52,21 @@ const SendWAModal = ({ selectedContact, handleClose, manager }) => {
     setMessageSent(false);
     handleClose();
   }, [handleClose]);
+
+  const setTemplate = (item) => {
+    setMessage(item);
+    setLoadTemplates(false);
+    setIsUsingTemplate(true);
+  }
+
+  const discardTemplate = (event) => {
+    event.preventDefault();
+
+    if (isUsingTemplate) {
+      setIsUsingTemplate(false);
+      setMessage(undefined);
+    }
+  }
 
   const onSubmitHandler = useCallback((event) => {
     event.preventDefault();
@@ -92,38 +116,7 @@ const SendWAModal = ({ selectedContact, handleClose, manager }) => {
     )
   }
 
-  if (message) {
-    return (
-      <Modal size="wide" ariaLabelledby={MODAL_ID} isOpen onDismiss={closeModal}>
-        <ModalHeader>
-          <ModalHeading as="h3" id={MODAL_ID}>Send Whatsapp Message to {selectedContact.firstname} {selectedContact.lastname}</ModalHeading>
-        </ModalHeader>
-        <Box as="form" onSubmit={onSubmitHandler}>
-          <ModalBody>
-            {
-              error ? (
-                <Box marginBottom="space60">
-                  <Alert variant='error'>
-                    <Text as="p">{error}</Text>
-                  </Alert>
-                </Box>
-              ) : null
-            }
-            <Label htmlFor="message" required>Message</Label>
-            <TextArea value={message} disabled={true} id="message" name="message" required />
-          </ModalBody>
-          <ModalFooter>
-            <ModalFooterActions>
-              <Button variant="secondary" type='button' onClick={closeModal}>Cancel</Button>
-              <Button variant="primary" type='submit' disabled={isProcessing}>{isProcessing ? 'Sending...' : 'Send'}</Button>
-            </ModalFooterActions>
-          </ModalFooter>
-        </Box>
-      </Modal>
-    )
-  }
-
-  if (templateList) {
+  if (loadTemplates && templateList) {
     return (
       <Modal size="wide" ariaLabelledby={MODAL_ID} isOpen onDismiss={closeModal}>
         <ModalHeader>
@@ -138,7 +131,7 @@ const SendWAModal = ({ selectedContact, handleClose, manager }) => {
                   <Column span={4} key={index}>
                     <Box backgroundColor="colorBackgroundPrimaryWeakest" display="flex" flexDirection="column" width="100%" justifyContent="space-between" padding="space50">
                       <Paragraph style={{width: '100%'}}>{item}</Paragraph>
-                      <Button variant="primary" type='button' onClick={() => { setMessage(item) }}>Select</Button>
+                      <Button variant="primary" type='button' onClick={() => { setTemplate(item) }}>Select</Button>
                     </Box>
                   </Column>
                 )
@@ -198,7 +191,36 @@ const SendWAModal = ({ selectedContact, handleClose, manager }) => {
     }
   }
 
-  return null;
+  return (
+    <Modal size="wide" ariaLabelledby={MODAL_ID} isOpen onDismiss={closeModal}>
+      <ModalHeader>
+        <ModalHeading as="h3" id={MODAL_ID}>Send Whatsapp Message to {selectedContact.firstname} {selectedContact.lastname}</ModalHeading>
+      </ModalHeader>
+      <Box as="form" onSubmit={onSubmitHandler}>
+        <ModalBody>
+          {
+            error ? (
+              <Box marginBottom="space60">
+                <Alert variant='error'>
+                  <Text as="p">{error}</Text>
+                </Alert>
+              </Box>
+            ) : null
+          }
+          <Label htmlFor="message" required>Message</Label>
+          <TextArea value={message} disabled={isUsingTemplate} id="message" name="message" required onChange={(event) => setMessage(event.target.value)} />
+        </ModalBody>
+        <ModalFooter>
+          <ModalFooterActions>
+            {isUsingTemplate && <Button variant="destructive" type='button' onClick={discardTemplate}>Discard template</Button>}
+            <Button variant="secondary" type='button' onClick={onSelectTemplateHandler}>Select template</Button>
+            <Button variant="secondary" type='button' onClick={closeModal}>Cancel</Button>
+            <Button variant="primary" type='submit' disabled={isProcessing}>{isProcessing ? 'Sending...' : 'Send'}</Button>
+          </ModalFooterActions>
+        </ModalFooter>
+      </Box>
+    </Modal>
+  )
 
 
 }
