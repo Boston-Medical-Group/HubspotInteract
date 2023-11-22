@@ -1,0 +1,37 @@
+{
+  "name": "flex-hubspot-interact-serverless",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "test": "tsc --noEmit",
+    "watch": "nodemon -x \"npm run start\"",
+    "start": "twilio-run --functions-folder dist/functions --assets-folder dist/assets",
+    "deploy": "twilio-run deploy --functions-folder dist/functions --assets-folder dist/assets",
+    "build": "tsc && npm run build:copy-assets",
+    "build:copy-assets": "copyfiles src/assets/* src/assets/**/* --up 2 --exclude **/*.ts dist/assets/",
+    "prestart": "npm run build",
+    "predeploy": "npm run build",
+    "bmgdeploy": "npm run build && twilio serverless:deploy --functions-folder dist/functions --assets-folder dist/assets"
+  },
+  "dependencies": {
+    "@twilio-labs/serverless-runtime-types": "^2.2.3",
+    "@twilio/runtime-handler": "1.2.3",
+    "node-fetch": "^2.6.7",
+    "twilio": "^3.79.0",
+    "twilio-flex-token-validator": "^1.5.6"
+  },
+  "devDependencies": {
+    "@types/node-fetch": "^2.6.9",
+    "copyfiles": "^2.2.0",
+    "nodemon": "^2.0.20",
+    "twilio-run": "^3.5.3",
+    "typescript": "^5.2.2",
+    "wrap-ansi": "^9.0.0"
+  },
+  "nodemonConfig": {
+    "ext": "ts",
+    "watch": [
+      "src"
+    ]
+  }
+}

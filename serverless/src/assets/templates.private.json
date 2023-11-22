@@ -1,0 +1,5 @@
+[
+    "Prueba en el entorno dev",
+    "My first template with {{customerFirstName}} and {{customerLastName}} and {{agentName}}.",
+    "Hello {{customerFirstName}} {{customerLastName}}, it's {{agentName}} from WhatsApp, feel free to reach out to me if you need more help"
+]
